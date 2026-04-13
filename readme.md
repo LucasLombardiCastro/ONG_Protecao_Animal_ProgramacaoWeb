@@ -1,20 +1,4 @@
-#Instale Lucide
-npm install next react react-dom lucide-react
-
-#Instale TypeScript e Tailwind CSS
-npm install --save-dev typescript @types/node @types/react @types/react-dom tailwindcss postcss autoprefixer
-
-#Configurar Tailwind CSS
-npx tailwindcss init -p
-
-Rodando em: 
-http://localhost:3000
-
-#Acordar o Servidor#
-npx next dev
-
-
-# Vida Animal 🐾 — Website para ONG de Proteção Animal
+# Vida Animal — Website para ONG de Proteção Animal
 
 Este projeto é uma plataforma web moderna e responsiva desenvolvida para uma ONG de Proteção Animal, focada em facilitar o engajamento do público e a gestão de adoções. O sistema permite que usuários conheçam animais para adoção, realizem doações e se candidatem ao voluntariado.
 
@@ -28,7 +12,7 @@ O projeto foi construído seguindo as especificações técnicas de interface e 
 * **Ícones:** Lucide-React
 * **Gestão de Versão de Node:** NVM (Node Version Manager)
 
-## 🚀 Como Rodar o Projeto na sua Máquina
+## Instruções para rodar local
 
 Siga este passo a passo para configurar o ambiente e executar a aplicação no seu computador (Ubuntu/WSL2).
 
