@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply antialiased text-stone-800 bg-[#fffaf5];
+    font-family: 'Fredoka', sans-serif;
+  }
+}
+
+@keyframes scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-infinite-scroll {
+  display: flex;
+  width: max-content;
+  animation: scroll 30s linear infinite;
+}
+
+@keyframes party-pop {
+  0% { transform: scale(1) rotate(0); }
+  25% { transform: scale(1.05) rotate(3deg); }
+  75% { transform: scale(1.05) rotate(-3deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+/* Animação rápida de 0.5s */
+.party-hover:hover {
+  animation: party-pop 0.5s ease-in-out 1;
+}
+
+.hide-scrollbar::-webkit-scrollbar { display: none; }
