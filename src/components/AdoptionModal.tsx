@@ -12,7 +12,7 @@ export default function AdoptionModal({ animal, onClose }: { animal: Animal | nu
   if (!animal) return null;
   const isAdotado = animal.status === 'Final feliz';
 
-  const handleEnviar = (e: React.FormEvent) => {
+  const handleEnviar = (e: React.ChangeEvent) => {
     e.preventDefault();
     setEnviado(true);
     setNome('');
@@ -31,7 +31,6 @@ export default function AdoptionModal({ animal, onClose }: { animal: Animal | nu
           <X size={24} />
         </button>
 
-        {/* Estrutura unificada para ambos os casos */}
         <div className="flex flex-col md:flex-row h-full overflow-y-auto">
           <div className="md:w-5/12 h-72 md:h-auto flex-shrink-0">
             <img src={animal.foto_url} alt={animal.nome} className="w-full h-full object-cover" />
@@ -55,7 +54,7 @@ export default function AdoptionModal({ animal, onClose }: { animal: Animal | nu
             </div>
 
             {isAdotado ? (
-              /* Área Exclusiva para Funcionários (Mockada) */
+              /* Parte somente para usuários */
               <div className="mt-auto pt-6">
                 <div className="p-6 bg-white border-2 border-orange-200 border-dashed rounded-3xl shadow-sm">
                   <p className="text-xs uppercase font-bold text-orange-600 tracking-widest mb-4 flex items-center gap-2">
@@ -77,7 +76,7 @@ export default function AdoptionModal({ animal, onClose }: { animal: Animal | nu
                 </div>
               </div>
             ) : (
-              /* Fluxo de Adoção */
+              /* Parte somente para o cartão de adoção */
               <div className="mt-auto space-y-6">
                 <div className="space-y-1">
                   <p className="text-sm text-stone-400 uppercase tracking-widest font-bold">Cuidados de Saúde</p>

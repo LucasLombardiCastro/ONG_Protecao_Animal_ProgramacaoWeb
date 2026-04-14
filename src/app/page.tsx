@@ -1,11 +1,10 @@
-import React from 'react';
 import Link from 'next/link';
 import PartnerCarousel from '../components/PartnerCarousel';
 
 export default function Home() {
   return (
     <main className="pt-20"> 
-      {/* Seção Hero - Mais compacta e carinhosa */}
+      {/* Parte inicial do site */}
       <section className="max-w-7xl mx-auto px-6 pb-12 flex flex-col md:flex-row items-center gap-10">
         <div className="md:w-1/2 space-y-6">
           <div className="inline-block bg-orange-100 text-orange-600 font-bold px-4 py-2 rounded-full text-sm">
@@ -38,7 +37,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Carrossel de Parceiros com Texto */}
+      {/* Carrossel */}
       <section className="py-10 bg-white border-y border-orange-50">
         <div className="text-center mb-6 px-6">
           <h2 className="text-2xl font-bold text-stone-800">Nossos Parceiros</h2>
@@ -49,7 +48,7 @@ export default function Home() {
         <PartnerCarousel />
       </section>
 
-      {/* Seção Ações - Divertida com 4 Fotos */}
+      {/* parte do como ajudar */}
       <section className="max-w-7xl mx-auto px-6 py-20">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           

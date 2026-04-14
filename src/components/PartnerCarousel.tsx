@@ -1,4 +1,3 @@
-import React from 'react';
 import { parceirosMock } from '../data/mockData';
 
 export default function PartnerCarousel() {

@@ -32,9 +32,6 @@ nvm install --lts
 #Definir como versão padrão
 nvm alias default node
 
-# Confirmar versão (deve ser v20 ou superior)
-node -v
-
 #Instalando as dependências
 command -v nvm
 ```

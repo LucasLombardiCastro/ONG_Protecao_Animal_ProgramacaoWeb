@@ -6,7 +6,7 @@ export default function DoacoesPage() {
   const [formAberto, setFormAberto] = useState<'insumos' | 'voluntariado' | null>(null);
   const [sucesso, setSucesso] = useState('');
 
-  const handleEnviar = (e: React.FormEvent) => {
+  const handleEnviar = (e: React.ChangeEvent) => {
     e.preventDefault();
     setSucesso('Recebemos sua mensagem com sucesso! Entraremos em contato em breve.');
     setTimeout(() => setSucesso(''), 4000);
@@ -56,7 +56,7 @@ export default function DoacoesPage() {
           <img src="https://placehold.co/150x150/white/orange?text=QR+CODE" className="w-32 h-32 opacity-70 rounded-xl border border-stone-100" alt="QR Code" />
         </section>
 
-        {/* Insumos */}
+        {/* Itens para doação */}
         <section id="insumos" className="bg-white p-8 rounded-3xl border border-stone-100 shadow-sm scroll-mt-24 transition-all">
           <div className="flex justify-between items-center cursor-pointer" onClick={() => setFormAberto(formAberto === 'insumos' ? null : 'insumos')}>
             <h2 className="text-2xl font-bold text-stone-800 flex items-center gap-3"><Package className="text-orange-400" /> Doar Insumos</h2>
@@ -85,7 +85,7 @@ export default function DoacoesPage() {
           )}
         </section>
 
-        {/* Seja um Herói (Com Vídeo) */}
+        {/* Voluntário */}
         <section id="voluntario" className="bg-white p-8 rounded-3xl border border-stone-100 shadow-sm scroll-mt-24 transition-all">
           <div className="flex justify-between items-center cursor-pointer" onClick={() => setFormAberto(formAberto === 'voluntariado' ? null : 'voluntariado')}>
             <h2 className="text-2xl font-bold text-stone-800 flex items-center gap-3"><Shield className="text-orange-400" /> Seja um Herói</h2>
@@ -100,9 +100,9 @@ export default function DoacoesPage() {
                 Você não precisa de superpoderes, apenas de um pouco de tempo livre e disposição. Limpar os canis, passear com os cães, ajudar nas feirinhas de adoção ou tirar boas fotos para o Instagram: toda ajuda muda o destino deles.
               </p>
 
-              {/* Mídia: Vídeo e Galeria mesclados */}
+              {/* Fotos e vídeo */}
               <div className="flex flex-col md:flex-row gap-4">
-                {/* Espaço para o Vídeo */}
+                {/* Vídeo */}
                 <div className="md:w-2/3 aspect-video bg-stone-900 rounded-3xl relative overflow-hidden group shadow-inner cursor-pointer flex-shrink-0">
                   <img src="https://images.squarespace-cdn.com/content/v1/5d2d2868fca61000017073bb/1767379538970-6UTWMX5LWQC4QV3XF2DK/DSC_0663.jpg?format=1000w" className="w-full h-full object-cover opacity-60 group-hover:opacity-40 transition-opacity duration-500" alt="Capa do Vídeo" />
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -111,7 +111,7 @@ export default function DoacoesPage() {
                   </div>
                 </div>
                 
-                {/* Imagens de Apoio */}
+                {/* fotos */}
                 <div className="md:w-1/3 flex flex-row md:flex-col gap-4 overflow-x-auto md:overflow-visible pb-2 md:pb-0 hide-scrollbar">
                   <img src="https://freedomservicedogs.org/wp-content/uploads/2024/09/DSC01069.jpg" className="w-48 md:w-full h-24 md:h-[calc(50%-0.5rem)] object-cover rounded-2xl flex-none" alt="Passeio" />
                   <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS9kC043rqHHdElQGtQBbIZKX5VUE4xf0ca0g&s" className="w-48 md:w-full h-24 md:h-[calc(50%-0.5rem)] object-cover rounded-2xl flex-none" alt="Equipe" />

@@ -1,5 +1,7 @@
-'use client';
-import React, { useState } from 'react';
+//declarando uso do next.js
+'use client'; 
+
+import { useState } from 'react';
 import { animaisMock, Animal } from '../../data/mockData';
 import AnimalCard from '../../components/AnimalCard';
 import AdoptionModal from '../../components/AdoptionModal';
@@ -33,7 +35,7 @@ export default function AdocaoPage() {
         {disponiveis.map(a => <AnimalCard key={a.id} animal={a} onClick={setAnimalSelecionado} />)}
       </div>
 
-      {/* Seção Finais Felizes (Design Polaroid fofo e minimalista sem emojis) */}
+      {/*Finais felizes*/}
       <section className="mt-32">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-stone-800">Finais Felizes</h2>
