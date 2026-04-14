@@ -1,10 +1,10 @@
-# Vida Animal — Website para ONG de Proteção Animal
+# Vida Animal — Aplicação Web para ONG de Proteção Animal
 
 Este projeto é uma plataforma web moderna e responsiva desenvolvida para uma ONG de Proteção Animal, focada em facilitar o engajamento do público e a gestão de adoções. O sistema permite que usuários conheçam animais para adoção, realizem doações e se candidatem ao voluntariado.
 
 O projeto foi construído seguindo as especificações técnicas de interface e as regras de negócio para garantir autonomia na atualização de conteúdos.
 
-## 🛠 Tecnologias Utilizadas
+## Tecnologias Utilizadas
 
 * **Framework:** Next.js (App Router)
 * **Linguagem:** TypeScript
@@ -46,5 +46,5 @@ npm run dev
 Após inicializar o servidor, o acesso o seu navegador padrão em http://localhost:3000
 
 ### Alunos
-* Lucas
+* Lucas Lombardi Castro - 13672978
 * Vinícius Morotti - 15491876
