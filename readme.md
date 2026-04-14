@@ -44,3 +44,7 @@ command -v nvm
 npm run dev
 ```
 Após inicializar o servidor, o acesso o seu navegador padrão em http://localhost:3000
+
+### Alunos
+* Lucas
+* Vinícius Morotti - 15491876
