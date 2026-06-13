@@ -1,33 +1,50 @@
 'use client';
-import React, { useState } from 'react';
-import { Animal } from '../data/mockData';
-import { X, Check, Info, Link as LinkIcon } from 'lucide-react';
 
-export default function AdoptionModal({ animal, onClose }: { animal: Animal | null, onClose: () => void }) {
+import { useState } from 'react';
+import { Animal } from '../types/domain';
+import { X, Check, Info, Link as LinkIcon } from 'lucide-react';
+import { ANIMAL_STATUS, UI_CONFIG } from '../constants/app';
+import { logger } from '../utils/logger';
+
+interface AdoptionModalProps {
+  animal: Animal | null;
+  onClose: () => void;
+}
+
+export default function AdoptionModal({ animal, onClose }: AdoptionModalProps) {
   const [mostrarForm, setMostrarForm] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
 
   if (!animal) return null;
-  const isAdotado = animal.status === 'Final feliz';
 
-  const handleEnviar = (e: React.ChangeEvent) => {
+  const isAdotado = animal.status === ANIMAL_STATUS.ADOPTED;
+
+  const handleEnviar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    logger.info('Solicitação de adoção enviada', { nome, telefone, animal_id: animal.id });
+    
     setEnviado(true);
     setNome('');
     setTelefone('');
+    
     setTimeout(() => {
       setEnviado(false);
       setMostrarForm(false);
-    }, 3000);
+    }, UI_CONFIG.TOAST_DURATION);
   };
 
   return (
-    <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
+    <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div className="bg-white relative shadow-2xl w-full max-w-4xl rounded-[2.5rem] max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95">
         
-        <button onClick={onClose} className="absolute z-20 top-6 right-6 p-2 bg-white/50 backdrop-blur-md rounded-full text-stone-600 hover:text-stone-900 hover:bg-white transition-all shadow-sm">
+        <button 
+          onClick={onClose} 
+          className="absolute z-20 top-6 right-6 p-2 bg-white/50 backdrop-blur-md rounded-full text-stone-600 hover:text-stone-900 hover:bg-white transition-all shadow-sm"
+          aria-label="Fechar"
+        >
           <X size={24} />
         </button>
 
@@ -39,7 +56,9 @@ export default function AdoptionModal({ animal, onClose }: { animal: Animal | nu
           <div className="md:w-7/12 p-8 md:p-12 flex flex-col space-y-8 bg-stone-50">
             <div>
               <h2 className="text-4xl font-bold text-stone-800 mb-2">{animal.nome}</h2>
-              <span className={`font-bold px-4 py-1.5 rounded-full text-sm inline-block ${isAdotado ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+              <span className={`font-bold px-4 py-1.5 rounded-full text-sm inline-block ${
+                isAdotado ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+              }`}>
                 {isAdotado ? 'Adotado' : animal.temperamento}
               </span>
             </div>
@@ -54,7 +73,7 @@ export default function AdoptionModal({ animal, onClose }: { animal: Animal | nu
             </div>
 
             {isAdotado ? (
-              /* Parte somente para usuários */
+              /* Staff Only Section */
               <div className="mt-auto pt-6">
                 <div className="p-6 bg-white border-2 border-orange-200 border-dashed rounded-3xl shadow-sm">
                   <p className="text-xs uppercase font-bold text-orange-600 tracking-widest mb-4 flex items-center gap-2">
@@ -62,26 +81,36 @@ export default function AdoptionModal({ animal, onClose }: { animal: Animal | nu
                   </p>
                   <div className="space-y-3 text-sm text-stone-600 font-medium">
                     <p className="flex justify-between border-b border-stone-100 pb-2">
-                      <span>Adotante:</span> <span className="text-stone-800">{animal.nome_adotante || 'Não registrado'}</span>
+                      <span>Adotante:</span> 
+                      <span className="text-stone-800">{animal.nome_adotante || 'Não registrado'}</span>
                     </p>
                     <p className="flex justify-between border-b border-stone-100 pb-2">
-                      <span>Contato:</span> <span className="text-stone-800">{animal.contato_adotante || 'Não registrado'}</span>
+                      <span>Contato:</span> 
+                      <span className="text-stone-800">{animal.contato_adotante || 'Não registrado'}</span>
                     </p>
                     <div className="pt-2">
-                      <a href={animal.doc_adocao_url || '#'} className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors bg-blue-50 px-4 py-2 rounded-xl">
-                        <LinkIcon size={16} /> Ver Documentação Assinada
-                      </a>
+                      {animal.doc_adocao_url && (
+                        <a 
+                          href={animal.doc_adocao_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors bg-blue-50 px-4 py-2 rounded-xl"
+                        >
+                          <LinkIcon size={16} /> Ver Documentação
+                        </a>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
             ) : (
-              /* Parte somente para o cartão de adoção */
+              /* Adoption Request Section */
               <div className="mt-auto space-y-6">
                 <div className="space-y-1">
                   <p className="text-sm text-stone-400 uppercase tracking-widest font-bold">Cuidados de Saúde</p>
                   <p className="font-medium text-stone-700 flex items-center gap-2">
-                    <Check size={18} className="text-green-500" /> Vacinado ({animal.vacinas.join(', ')})
+                    <Check size={18} className="text-green-500" /> 
+                    Vacinado ({animal.vacinas.join(', ')})
                   </p>
                 </div>
 
@@ -117,7 +146,10 @@ export default function AdoptionModal({ animal, onClose }: { animal: Animal | nu
                         required 
                       />
                     </div>
-                    <button type="submit" className="w-full bg-stone-800 text-white font-bold py-4 rounded-xl hover:bg-stone-900 transition-all">
+                    <button 
+                      type="submit" 
+                      className="w-full bg-stone-800 text-white font-bold py-4 rounded-xl hover:bg-stone-900 transition-all"
+                    >
                       Enviar contato
                     </button>
                   </form>

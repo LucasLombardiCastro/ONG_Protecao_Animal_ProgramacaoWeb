@@ -2,16 +2,24 @@
 'use client'; 
 
 import { useState } from 'react';
-import { animaisMock, Animal } from '../../data/mockData';
+import { animaisMock } from '../../data/mockData';
+import { Animal } from '../../types/domain';
 import AnimalCard from '../../components/AnimalCard';
 import AdoptionModal from '../../components/AdoptionModal';
+import AnimalFormModal from '../../components/AnimalFormModal';
+import { Plus, Edit } from 'lucide-react';
+import { ANIMAL_STATUS, ANIMAL_SPECIE } from '../../constants/app';
 
 export default function AdocaoPage() {
   const [filtro, setFiltro] = useState('Todos');
   const [animalSelecionado, setAnimalSelecionado] = useState<Animal | null>(null);
+  const [mostrarNovoAnimal, setMostrarNovoAnimal] = useState(false);
+  const [animalEmEdicao, setAnimalEmEdicao] = useState<Animal | null>(null);
 
-  const disponiveis = animaisMock.filter(a => a.status === 'Esperando por um lar' && (filtro === 'Todos' || a.especie === filtro));
-  const felizes = animaisMock.filter(a => a.status === 'Final feliz');
+  const disponiveis = animaisMock.filter(
+    a => a.status === ANIMAL_STATUS.WAITING && (filtro === 'Todos' || a.especie === filtro)
+  );
+  const felizes = animaisMock.filter(a => a.status === ANIMAL_STATUS.ADOPTED);
 
   return (
     <main className="pt-24 pb-20 px-6 max-w-7xl mx-auto">
@@ -19,20 +27,36 @@ export default function AdocaoPage() {
         Encontre seu novo <span className="text-orange-500 underline decoration-orange-200">melhor amigo</span>
       </h1>
       
-      <div className="flex justify-center gap-3 mb-16">
-        {['Todos', 'Cão', 'Gato'].map(e => (
-          <button 
-            key={e} 
-            onClick={() => setFiltro(e)} 
-            className={`px-8 py-2 rounded-full font-bold transition-all ${filtro === e ? 'bg-orange-500 text-white shadow-md' : 'bg-orange-50 text-orange-400 hover:bg-orange-100'}`}
-          >
-            {e}
-          </button>
-        ))}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-16">
+        <div className="flex gap-3">
+          {['Todos', 'Cão', 'Gato'].map(e => (
+            <button 
+              key={e} 
+              onClick={() => setFiltro(e)} 
+              className={`px-8 py-2 rounded-full font-bold transition-all ${filtro === e ? 'bg-orange-500 text-white shadow-md' : 'bg-orange-50 text-orange-400 hover:bg-orange-100'}`}
+            >
+              {e}
+            </button>
+          ))}
+        </div>
+
+        <button 
+          onClick={() => setMostrarNovoAnimal(true)}
+          className="flex items-center gap-2 px-6 py-3 bg-stone-800 text-white font-bold rounded-2xl hover:bg-stone-700 hover:-translate-y-1 transition-all shadow-lg"
+        >
+          <Plus size={20} /> Adicionar Animal
+        </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-        {disponiveis.map(a => <AnimalCard key={a.id} animal={a} onClick={setAnimalSelecionado} />)}
+        {disponiveis.map(a => (
+          <AnimalCard 
+            key={a.id} 
+            animal={a} 
+            onClick={setAnimalSelecionado}
+            onEdit={setAnimalEmEdicao}
+          />
+        ))}
       </div>
 
       {/*Finais felizes*/}
@@ -46,7 +70,7 @@ export default function AdocaoPage() {
           {felizes.map(a => (
             <div 
               key={a.id} 
-              className="party-hover transition-transform cursor-pointer bg-white p-3 rounded-3xl shadow-sm border border-orange-50 hover:shadow-md group"
+              className="party-hover transition-transform cursor-pointer bg-white p-3 rounded-3xl shadow-sm border border-orange-50 hover:shadow-md group relative"
               onClick={() => setAnimalSelecionado(a)}
             >
               <div className="aspect-square rounded-2xl overflow-hidden mb-4 relative">
@@ -56,6 +80,16 @@ export default function AdocaoPage() {
                     Novo Lar
                   </span>
                 </div>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setAnimalEmEdicao(a);
+                  }}
+                  className="absolute top-2 right-2 p-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-all shadow-md opacity-0 group-hover:opacity-100"
+                  title="Editar animal"
+                >
+                  <Edit size={16} />
+                </button>
               </div>
               <p className="font-bold text-stone-700 text-center text-lg">{a.nome}</p>
             </div>
@@ -64,6 +98,8 @@ export default function AdocaoPage() {
       </section>
 
       {animalSelecionado && <AdoptionModal animal={animalSelecionado} onClose={() => setAnimalSelecionado(null)} />}
+      {mostrarNovoAnimal && <AnimalFormModal onClose={() => setMostrarNovoAnimal(false)} />}
+      {animalEmEdicao && <AnimalFormModal animal={animalEmEdicao} onClose={() => setAnimalEmEdicao(null)} />}
     </main>
   );
-}
+}    

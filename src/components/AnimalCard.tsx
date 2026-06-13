@@ -1,12 +1,20 @@
 'use client';
-import { Animal } from '../data/mockData';
+
+import { Animal } from '../types/domain';
+import { Edit } from 'lucide-react';
 
 interface Props {
   animal: Animal;
   onClick: (animal: Animal) => void;
+  onEdit?: (animal: Animal) => void;
 }
 
-export default function AnimalCard({ animal, onClick }: Props) {
+export default function AnimalCard({ animal, onClick, onEdit }: Props) {
+  const handleEditClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    onEdit?.(animal);
+  };
+
   return (
     <div 
       onClick={() => onClick(animal)}
@@ -23,6 +31,16 @@ export default function AnimalCard({ animal, onClick }: Props) {
             {animal.porte}
           </span>
         </div>
+        {onEdit && (
+          <button 
+            onClick={handleEditClick}
+            className="absolute top-4 right-4 p-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-all shadow-md opacity-0 group-hover:opacity-100"
+            title="Editar animal"
+            aria-label="Editar animal"
+          >
+            <Edit size={18} />
+          </button>
+        )}
       </div>
       <div>
         <h3 className="text-xl font-medium text-stone-900">{animal.nome}</h3>

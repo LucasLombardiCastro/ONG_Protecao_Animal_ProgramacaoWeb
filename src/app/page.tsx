@@ -3,7 +3,8 @@ import PartnerCarousel from '../components/PartnerCarousel';
 
 export default function Home() {
   return (
-    <main className="pt-20"> 
+    <main className="pt-20">
+
       {/* Parte inicial do site */}
       <section className="max-w-7xl mx-auto px-6 pb-12 flex flex-col md:flex-row items-center gap-10">
         <div className="md:w-1/2 space-y-6">
