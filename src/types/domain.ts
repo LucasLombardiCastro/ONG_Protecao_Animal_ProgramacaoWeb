@@ -69,20 +69,3 @@ export interface VolunteerRequest extends RequestBase {
 
 export type Request = AdoptionRequest | VolunteerRequest; // There are two types of requests
 
-// Authentication Types
-export interface Credentials {
-  email: string;
-  senha: string;
-  nome: string;
-}
-
-//Used to store the user information after login
-export interface AuthResponse {
-  success: boolean;
-  user?: {
-    email: string;
-    nome: string;
-  };
-  token?: string;
-  message?: string;
-}

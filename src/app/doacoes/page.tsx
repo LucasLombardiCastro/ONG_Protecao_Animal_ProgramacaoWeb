@@ -1,15 +1,65 @@
 'use client';
 import React, { useState } from 'react';
-import { Heart, Package, Shield, ChevronDown, ChevronUp, PlayCircle } from 'lucide-react';
+import { Heart, Package, Shield, ChevronDown, ChevronUp, PlayCircle, AlertCircle } from 'lucide-react';
+import { requestService } from '../../services/requestService';
+import { dataAtual } from '../../utils/date';
+import { logger } from '../../utils/logger';
+
+const OPCOES_INTERESSE = [
+  { value: 'Mão na massa (Limpeza/Organização)', label: 'Mão na massa (Limpeza/Organização)' },
+  { value: 'Lazer (Passeio e brincadeiras)', label: 'Lazer (Passeio e brincadeiras)' },
+  { value: 'Eventos (Feirinhas de Adoção)', label: 'Eventos (Feirinhas de Adoção)' },
+  { value: 'Onde for necessário!', label: 'Onde for necessário!' },
+];
 
 export default function DoacoesPage() {
   const [formAberto, setFormAberto] = useState<'insumos' | 'voluntariado' | null>(null);
   const [sucesso, setSucesso] = useState('');
 
-  const handleEnviar = (e: React.ChangeEvent) => {
+  // TODO: implementar o envio de insumos no backend
+  const handleEnviarInsumos = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSucesso('Recebemos sua mensagem com sucesso! Entraremos em contato em breve.');
     setTimeout(() => setSucesso(''), 4000);
+  };
+
+  // Voluntariaddo já está implementado no backend
+  const [nomeVol, setNomeVol] = useState('');
+  const [telefoneVol, setTelefoneVol] = useState('');
+  const [disponibilidadeVol, setDisponibilidadeVol] = useState('');
+  const [interesseVol, setInteresseVol] = useState('');
+  const [enviandoVol, setEnviandoVol] = useState(false);
+  const [erroVol, setErroVol] = useState('');
+
+  const handleEnviarVoluntario = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setErroVol('');
+    setEnviandoVol(true);
+
+    try {
+      await requestService.createVolunteer(
+        {
+          nome: nomeVol,
+          telefone: telefoneVol,
+          disponibilidade: disponibilidadeVol,
+          interesse: interesseVol,
+        },
+        dataAtual()
+      );
+
+      setSucesso('Recebemos sua mensagem com sucesso! Entraremos em contato em breve.');
+      setNomeVol('');
+      setTelefoneVol('');
+      setDisponibilidadeVol('');
+      setInteresseVol('');
+      setTimeout(() => setSucesso(''), 4000);
+    } catch (error) {
+      const mensagem = error instanceof Error ? error.message : 'Não foi possível enviar sua inscrição.';
+      logger.error('Falha ao enviar solicitação de voluntariado', mensagem);
+      setErroVol(mensagem);
+    } finally {
+      setEnviandoVol(false);
+    }
   };
 
   return (
@@ -72,7 +122,7 @@ export default function DoacoesPage() {
               </p>
               
               {sucesso ? <div className="bg-green-50 text-green-700 p-4 rounded-xl font-medium text-center">{sucesso}</div> : (
-                <form className="space-y-4" onSubmit={handleEnviar}>
+                <form className="space-y-4" onSubmit={handleEnviarInsumos}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <input className="w-full bg-stone-50 border border-stone-200 rounded-xl py-3 px-4 text-stone-800 placeholder-stone-400 focus:border-orange-500 focus:outline-none transition-colors" placeholder="Qual seu nome?" required />
                     <input className="w-full bg-stone-50 border border-stone-200 rounded-xl py-3 px-4 text-stone-800 placeholder-stone-400 focus:border-orange-500 focus:outline-none transition-colors" placeholder="Telefone de contato" required />
@@ -119,22 +169,56 @@ export default function DoacoesPage() {
               </div>
 
               {sucesso ? <div className="bg-green-50 text-green-700 p-4 rounded-xl font-medium text-center">{sucesso}</div> : (
-                <form className="space-y-4" onSubmit={handleEnviar}>
+                <form className="space-y-4" onSubmit={handleEnviarVoluntario}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input className="w-full bg-stone-50 border border-stone-200 rounded-xl py-3 px-4 text-stone-800 placeholder-stone-400 focus:border-orange-500 focus:outline-none transition-colors" placeholder="Nome completo" required />
-                    <input className="w-full bg-stone-50 border border-stone-200 rounded-xl py-3 px-4 text-stone-800 placeholder-stone-400 focus:border-orange-500 focus:outline-none transition-colors" placeholder="Telefone / WhatsApp" required />
+                    <input
+                      value={nomeVol}
+                      onChange={(e) => setNomeVol(e.target.value)}
+                      className="w-full bg-stone-50 border border-stone-200 rounded-xl py-3 px-4 text-stone-800 placeholder-stone-400 focus:border-orange-500 focus:outline-none transition-colors"
+                      placeholder="Nome completo"
+                      required
+                    />
+                    <input
+                      value={telefoneVol}
+                      onChange={(e) => setTelefoneVol(e.target.value)}
+                      className="w-full bg-stone-50 border border-stone-200 rounded-xl py-3 px-4 text-stone-800 placeholder-stone-400 focus:border-orange-500 focus:outline-none transition-colors"
+                      placeholder="Telefone / WhatsApp"
+                      required
+                    />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input className="w-full bg-stone-50 border border-stone-200 rounded-xl py-3 px-4 text-stone-800 placeholder-stone-400 focus:border-orange-500 focus:outline-none transition-colors" placeholder="Quais dias você tem livres?" required />
-                    <select className="w-full bg-stone-50 border border-stone-200 rounded-xl py-3 px-4 text-stone-600 focus:border-orange-500 focus:outline-none cursor-pointer" required defaultValue="">
+                    <input
+                      value={disponibilidadeVol}
+                      onChange={(e) => setDisponibilidadeVol(e.target.value)}
+                      className="w-full bg-stone-50 border border-stone-200 rounded-xl py-3 px-4 text-stone-800 placeholder-stone-400 focus:border-orange-500 focus:outline-none transition-colors"
+                      placeholder="Quais dias você tem livres?"
+                      required
+                    />
+                    <select
+                      value={interesseVol}
+                      onChange={(e) => setInteresseVol(e.target.value)}
+                      className="w-full bg-stone-50 border border-stone-200 rounded-xl py-3 px-4 text-stone-600 focus:border-orange-500 focus:outline-none cursor-pointer"
+                      required
+                    >
                       <option value="" disabled>Como gostaria de ajudar?</option>
-                      <option value="limpeza">Mão na massa (Limpeza/Organização)</option>
-                      <option value="passeio">Lazer (Passeio e brincadeiras)</option>
-                      <option value="eventos">Eventos (Feirinhas de Adoção)</option>
-                      <option value="qualquer">Onde for necessário!</option>
+                      {OPCOES_INTERESSE.map((opcao) => (
+                        <option key={opcao.value} value={opcao.value}>{opcao.label}</option>
+                      ))}
                     </select>
                   </div>
-                  <button className="bg-stone-800 text-white font-bold px-8 py-4 rounded-xl hover:bg-stone-900 transition-all w-full md:w-auto mt-2">Quero me inscrever</button>
+                  {erroVol && (
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+                      <AlertCircle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-red-700 font-medium text-sm">{erroVol}</p>
+                    </div>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={enviandoVol}
+                    className="bg-stone-800 text-white font-bold px-8 py-4 rounded-xl hover:bg-stone-900 disabled:opacity-60 disabled:cursor-not-allowed transition-all w-full md:w-auto mt-2"
+                  >
+                    {enviandoVol ? 'Enviando...' : 'Quero me inscrever'}
+                  </button>
                 </form>
               )}
             </div>

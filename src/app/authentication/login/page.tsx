@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogIn, AlertCircle, Eye, EyeOff } from 'lucide-react';
-import { credenciaisMock } from '../../../data/mockData';
+// import { credenciaisMock } from '../../../data/mockData';
+import { authService } from '../../../services/authService';
 import { sessionStorage } from '../../../utils/api';
 import { logger } from '../../../utils/logger';
 
@@ -17,34 +18,55 @@ export default function LoginPage() {
   const [carregando, setCarregando] = useState(false);
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
-  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErro('');
     setCarregando(true);
 
-    // Simulate API request delay
-    setTimeout(() => {
-      const usuarioEncontrado = credenciaisMock.find(
-        cred => cred.email === email && cred.senha === senha
-      );
+    // // Simulate API request delay
+    // setTimeout(() => {
+    //   const usuarioEncontrado = credenciaisMock.find(
+    //     cred => cred.email === email && cred.senha === senha
+    //   );
 
-      if (usuarioEncontrado) {
-        logger.info('Login bem-sucedido', { email: usuarioEncontrado.email });
+    //   if (usuarioEncontrado) {
+    //     logger.info('Login bem-sucedido', { email: usuarioEncontrado.email });
         
-        sessionStorage.set({
-          email: usuarioEncontrado.email,
-          nome: usuarioEncontrado.nome,
-          dataLogin: new Date().toISOString(),
-        });
+    //     sessionStorage.set({
+    //       email: usuarioEncontrado.email,
+    //       nome: usuarioEncontrado.nome,
+    //       dataLogin: new Date().toISOString(),
+    //     });
         
-        router.push('/solicitacoes');
-      } else {
-        const errorMsg = 'Email ou senha incorretos. Tente novamente.';
-        logger.warn('Falha no login', { email });
-        setErro(errorMsg);
-        setCarregando(false);
-      }
-    }, LOGIN_DELAY_MS);
+    //     router.push('/solicitacoes');
+    //   } else {
+    //     const errorMsg = 'Email ou senha incorretos. Tente novamente.';
+    //     logger.warn('Falha no login', { email });
+    //     setErro(errorMsg);
+    //     setCarregando(false);
+    //   }
+    // }, LOGIN_DELAY_MS);
+
+    try {
+      const { usuario, token } = await authService.login(email, senha);
+
+      logger.info('Login bem-sucedido', { email: usuario.email });
+
+      sessionStorage.set({
+        email: usuario.email,
+        nome: usuario.nome,
+        dataLogin: new Date().toISOString(),
+        token,
+      });
+
+      router.push('/solicitacoes');
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error ? error.message : 'Email ou senha incorretos. Tente novamente.';
+      logger.warn('Falha no login', { email, error: errorMsg });
+      setErro(errorMsg);
+      setCarregando(false);
+    }
   };
 
   return (

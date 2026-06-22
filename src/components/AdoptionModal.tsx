@@ -4,7 +4,9 @@ import { useState } from 'react';
 import { Animal } from '../types/domain';
 import { X, Check, Info, Link as LinkIcon } from 'lucide-react';
 import { ANIMAL_STATUS, UI_CONFIG } from '../constants/app';
+import { requestService } from '../services/requestService';
 import { logger } from '../utils/logger';
+import { dataAtual } from '../utils/date';
 
 interface AdoptionModalProps {
   animal: Animal | null;
@@ -16,24 +18,47 @@ export default function AdoptionModal({ animal, onClose }: AdoptionModalProps) {
   const [enviado, setEnviado] = useState(false);
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState('');
 
   if (!animal) return null;
 
   const isAdotado = animal.status === ANIMAL_STATUS.ADOPTED;
 
-  const handleEnviar = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleEnviar = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
-    logger.info('Solicitação de adoção enviada', { nome, telefone, animal_id: animal.id });
-    
-    setEnviado(true);
-    setNome('');
-    setTelefone('');
-    
-    setTimeout(() => {
-      setEnviado(false);
-      setMostrarForm(false);
-    }, UI_CONFIG.TOAST_DURATION);
+    setErro('');
+    setEnviando(true);
+
+    try {
+      await requestService.createAdoption(
+        {
+          nome,
+          telefone,
+          animal_id: animal.id,
+          animal_nome: animal.nome,
+          animal_foto: animal.foto_url,
+        },
+        dataAtual()
+      );
+
+      logger.info('Solicitação de adoção enviada', { nome, telefone, animal_id: animal.id });
+
+      setEnviado(true);
+      setNome('');
+      setTelefone('');
+
+      setTimeout(() => {
+        setEnviado(false);
+        setMostrarForm(false);
+      }, UI_CONFIG.TOAST_DURATION);
+    } catch (error) {
+      const mensagem = error instanceof Error ? error.message : 'Não foi possível enviar sua solicitação.';
+      logger.error('Falha ao enviar solicitação de adoção', mensagem);
+      setErro(mensagem);
+    } finally {
+      setEnviando(false);
+    }
   };
 
   return (

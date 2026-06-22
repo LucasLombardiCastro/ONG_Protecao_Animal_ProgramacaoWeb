@@ -5,8 +5,8 @@
 
 // Animal Status
 export const ANIMAL_STATUS = {
-  WAITING: 'Esperando por um lar',
-  ADOPTED: 'Final feliz',
+  WAITING: 'Disponível',
+  ADOPTED: 'Adotado',
 } as const;
 
 // Animal Specie
@@ -37,10 +37,10 @@ export const REQUEST_TYPE = {
 
 // API Endpoints (will be replaced with actual backend URLs)
 export const API_ENDPOINTS = {
-  ANIMALS: '/api/animals',
-  REQUESTS: '/api/requests',
-  PARTNERS: '/api/partners',
-  AUTH: '/api/auth',
+  ANIMALS: '/animals',
+  REQUESTS: '/requests',
+  PARTNERS: '/partners',
+  AUTH: '/auth',
 } as const;
 
 // UI Configuration

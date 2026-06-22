@@ -1,0 +1,1 @@
+export const dataAtual = (): string => new Date().toLocaleDateString('pt-BR');

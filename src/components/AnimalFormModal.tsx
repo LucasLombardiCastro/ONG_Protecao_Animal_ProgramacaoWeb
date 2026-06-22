@@ -4,14 +4,16 @@ import { useState } from 'react';
 import { Animal } from '../types/domain';
 import { X, Upload } from 'lucide-react';
 import { ANIMAL_SPECIE, ANIMAL_SIZE, ANIMAL_STATUS } from '../constants/app';
+import { animalService, AnimalPayload } from '../services/animalService';
 import { logger } from '../utils/logger';
 
 interface AnimalFormModalProps {
   animal?: Animal | null;
   onClose: () => void;
+  onSaved?: () => void;
 }
 
-export default function AnimalFormModal({ animal = null, onClose }: AnimalFormModalProps) {
+export default function AnimalFormModal({ animal = null, onClose, onSaved }: AnimalFormModalProps) {
   const isEditing = !!animal;
 
   const [foto, setFoto] = useState(animal?.foto_url || '');
@@ -24,11 +26,16 @@ export default function AnimalFormModal({ animal = null, onClose }: AnimalFormMo
   const [vacinas, setVacinas] = useState(animal?.vacinas.join(', ') || '');
   const [status, setStatus] = useState(animal?.status || ANIMAL_STATUS.WAITING);
 
-  const handleSalvar = (e: React.FormEvent<HTMLFormElement>) => {
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState('');
+
+  const handleSalvar = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    const animalData = {
-      id: animal?.id || Date.now().toString(),
+    setErro('');
+    setSalvando(true);
+
+    const payload: AnimalPayload = {
       nome,
       especie: especie as typeof ANIMAL_SPECIE[keyof typeof ANIMAL_SPECIE],
       idade,
@@ -36,24 +43,34 @@ export default function AnimalFormModal({ animal = null, onClose }: AnimalFormMo
       temperamento,
       historia,
       foto_url: foto,
-      vacinas: vacinas.split(',').map(v => v.trim()).filter(Boolean),
+      vacinas: vacinas.split(',').map((v) => v.trim()).filter(Boolean),
       status: status as typeof ANIMAL_STATUS[keyof typeof ANIMAL_STATUS],
       ...(animal?.nome_adotante && { nome_adotante: animal.nome_adotante }),
       ...(animal?.contato_adotante && { contato_adotante: animal.contato_adotante }),
       ...(animal?.doc_adocao_url && { doc_adocao_url: animal.doc_adocao_url }),
     };
 
-    if (isEditing) {
-      logger.info('Editando animal:', animalData);
-      // TODO: Chamar API para atualizar animal
-      // await apiRequest(`/animals/${animal.id}`, { method: 'PUT', body: animalData });
-    } else {
-      logger.info('Criando novo animal:', animalData);
-      // TODO: Chamar API para criar animal
-      // await apiRequest('/animals', { method: 'POST', body: animalData });
+
+    try {
+      if (isEditing && animal) {
+        logger.info('Editando animal:', { id: animal.id, ...payload });
+        await animalService.update(animal.id, payload);
+      } else {
+        logger.info('Criando novo animal:', payload);
+        await animalService.create(payload);
+      }
+
+      onSaved?.();
+      onClose();
+
+    } catch (error) {
+      const mensagem = error instanceof Error ? error.message : 'Erro ao salvar animal.';
+      logger.error('Falha ao salvar animal', mensagem);
+      setErro(mensagem);
+
+    } finally {
+      setSalvando(false);
     }
-    
-    onClose();
   };
 
   return (
