@@ -33,6 +33,7 @@ export const REQUEST_STATUS = {
 export const REQUEST_TYPE = {
   ADOPTION: 'adocao',
   VOLUNTEER: 'voluntario',
+  SUPPLY: 'insumo',
 } as const;
 
 // API Endpoints (will be replaced with actual backend URLs)

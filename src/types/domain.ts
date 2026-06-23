@@ -67,5 +67,9 @@ export interface VolunteerRequest extends RequestBase {
   interesse: string;
 }
 
-export type Request = AdoptionRequest | VolunteerRequest; // There are two types of requests
+export interface SupplyDonationRequest extends RequestBase {
+  tipo: typeof REQUEST_TYPE.SUPPLY;
+  itens: string;
+}
 
+export type Request = AdoptionRequest | VolunteerRequest | SupplyDonationRequest;

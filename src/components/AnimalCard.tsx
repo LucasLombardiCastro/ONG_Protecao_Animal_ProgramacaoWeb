@@ -34,7 +34,7 @@ export default function AnimalCard({ animal, onClick, onEdit }: Props) {
         {onEdit && (
           <button 
             onClick={handleEditClick}
-            className="absolute top-4 right-4 p-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-all shadow-md opacity-0 group-hover:opacity-100"
+            className="absolute top-4 right-4 p-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-all shadow-md opacity-100 md:opacity-0 md:group-hover:opacity-100"
             title="Editar animal"
             aria-label="Editar animal"
           >

@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { Heart, Package, Shield, ChevronDown, ChevronUp, PlayCircle, AlertCircle } from 'lucide-react';
+import { Heart, Package, Shield, ChevronDown, ChevronUp, PlayCircle, AlertCircle, Copy, Check } from 'lucide-react';
 import { requestService } from '../../services/requestService';
 import { dataAtual } from '../../utils/date';
 import { logger } from '../../utils/logger';
@@ -15,13 +15,6 @@ const OPCOES_INTERESSE = [
 export default function DoacoesPage() {
   const [formAberto, setFormAberto] = useState<'insumos' | 'voluntariado' | null>(null);
   const [sucesso, setSucesso] = useState('');
-
-  // TODO: implementar o envio de insumos no backend
-  const handleEnviarInsumos = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setSucesso('Recebemos sua mensagem com sucesso! Entraremos em contato em breve.');
-    setTimeout(() => setSucesso(''), 4000);
-  };
 
   // Voluntariaddo já está implementado no backend
   const [nomeVol, setNomeVol] = useState('');
@@ -62,6 +55,47 @@ export default function DoacoesPage() {
     }
   };
 
+  const [nomeIns, setNomeIns] = useState('');
+  const [telefoneIns, setTelefoneIns] = useState('');
+  const [itensIns, setItensIns] = useState('');
+  const [enviandoIns, setEnviandoIns] = useState(false);
+  const [erroIns, setErroIns] = useState('');
+
+  const handleEnviarInsumos = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setErroIns('');
+    setEnviandoIns(true);
+
+    try {
+      await requestService.createSupplyDonation(
+        { nome: nomeIns, telefone: telefoneIns, itens: itensIns },
+        dataAtual()
+      );
+      setSucesso('Recebemos sua mensagem com sucesso! Entraremos em contato em breve.');
+      setNomeIns(''); setTelefoneIns(''); setItensIns('');
+      setTimeout(() => setSucesso(''), 4000);
+    } catch (error) {
+      const mensagem = error instanceof Error ? error.message : 'Não foi possível enviar sua doação.';
+      logger.error('Falha ao enviar doação de insumos', mensagem);
+      setErroIns(mensagem);
+    } finally {
+      setEnviandoIns(false);
+    }
+  };
+
+  const PIX_KEY = 'vida.animal@pix.org';
+  const [copiado, setCopiado] = useState(false);
+
+  const handleCopiarPix = async () => {
+    try {
+      await navigator.clipboard.writeText(PIX_KEY);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch (error) {
+      logger.error('Falha ao copiar chave PIX', error);
+    }
+  };
+
   return (
     <main className="pt-24 pb-20 px-6 max-w-4xl mx-auto space-y-10">
       <div className="text-center space-y-4 pb-4">
@@ -99,8 +133,21 @@ export default function DoacoesPage() {
             <h2 className="text-2xl font-bold text-stone-800">Doação via PIX</h2>
             <p className="text-stone-500 font-medium max-w-sm">Use o valor para custear ração e idas ao veterinário.</p>
             <div className="inline-flex items-center gap-4 pt-2">
-              <span className="font-mono text-orange-600 font-bold bg-orange-50 px-4 py-2 rounded-xl">vida.animal@pix.org</span>
-              <button className="text-xs font-bold uppercase bg-stone-100 text-stone-600 px-4 py-2 rounded-xl hover:bg-stone-200 transition-all">Copiar</button>
+              <span className="font-mono text-orange-600 font-bold bg-orange-50 px-4 py-2 rounded-xl">{PIX_KEY}</span>
+              <button
+                onClick={handleCopiarPix}
+                className="text-xs font-bold uppercase bg-stone-100 text-stone-600 px-4 py-2 rounded-xl hover:bg-stone-200 transition-all flex items-center gap-1.5"
+              >
+                {copiado ? (
+                  <>
+                    <Check size={14} className="text-green-600" /> Copiado!
+                  </>
+                ) : (
+                  <>
+                    <Copy size={14} /> Copiar
+                  </>
+                )}
+              </button>
             </div>
           </div>
           <img src="https://placehold.co/150x150/white/orange?text=QR+CODE" className="w-32 h-32 opacity-70 rounded-xl border border-stone-100" alt="QR Code" />
@@ -124,11 +171,41 @@ export default function DoacoesPage() {
               {sucesso ? <div className="bg-green-50 text-green-700 p-4 rounded-xl font-medium text-center">{sucesso}</div> : (
                 <form className="space-y-4" onSubmit={handleEnviarInsumos}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input className="w-full bg-stone-50 border border-stone-200 rounded-xl py-3 px-4 text-stone-800 placeholder-stone-400 focus:border-orange-500 focus:outline-none transition-colors" placeholder="Qual seu nome?" required />
-                    <input className="w-full bg-stone-50 border border-stone-200 rounded-xl py-3 px-4 text-stone-800 placeholder-stone-400 focus:border-orange-500 focus:outline-none transition-colors" placeholder="Telefone de contato" required />
+                    <input
+                      value={nomeIns}
+                      onChange={(e) => setNomeIns(e.target.value)}
+                      className="w-full bg-stone-50 border border-stone-200 rounded-xl py-3 px-4 text-stone-800 placeholder-stone-400 focus:border-orange-500 focus:outline-none transition-colors"
+                      placeholder="Qual seu nome?"
+                      required
+                    />
+                    <input
+                      value={telefoneIns}
+                      onChange={(e) => setTelefoneIns(e.target.value)}
+                      className="w-full bg-stone-50 border border-stone-200 rounded-xl py-3 px-4 text-stone-800 placeholder-stone-400 focus:border-orange-500 focus:outline-none transition-colors"
+                      placeholder="Telefone de contato"
+                      required
+                    />
                   </div>
-                  <input className="w-full bg-stone-50 border border-stone-200 rounded-xl py-3 px-4 text-stone-800 placeholder-stone-400 focus:border-orange-500 focus:outline-none transition-colors" placeholder="O que você gostaria de nos entregar?" required />
-                  <button className="bg-orange-500 text-white font-bold px-8 py-4 rounded-xl hover:bg-orange-600 transition-all w-full md:w-auto">Combinar entrega</button>
+                  <input
+                    value={itensIns}
+                    onChange={(e) => setItensIns(e.target.value)}
+                    className="w-full bg-stone-50 border border-stone-200 rounded-xl py-3 px-4 text-stone-800 placeholder-stone-400 focus:border-orange-500 focus:outline-none transition-colors"
+                    placeholder="O que você gostaria de nos entregar?"
+                    required
+                  />
+                  {erroIns && (
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+                      <AlertCircle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-red-700 font-medium text-sm">{erroIns}</p>
+                    </div>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={enviandoIns}
+                    className="bg-orange-500 text-white font-bold px-8 py-4 rounded-xl hover:bg-orange-600 disabled:opacity-60 disabled:cursor-not-allowed transition-all w-full md:w-auto"
+                  >
+                    {enviandoIns ? 'Enviando...' : 'Combinar entrega'}
+                  </button>
                 </form>
               )}
             </div>

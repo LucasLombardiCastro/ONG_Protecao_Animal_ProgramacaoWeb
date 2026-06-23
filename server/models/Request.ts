@@ -3,7 +3,8 @@ import { sequelize } from '../config/database';
 
 // tipos auxiliares
 type RequestStatus = 'Não contatado' | 'Aguardando resposta' | 'Respondido';
-type RequestType = 'adocao' | 'voluntario';
+type RequestType = 'adocao' | 'voluntario' | 'insumo';
+
 
 // interface com os atributos do request
 interface RequestAttributes {
@@ -24,12 +25,15 @@ interface RequestAttributes {
   // campos de voluntariado
   disponibilidade?: string | null;
   interesse?: string | null;
+
+  // campos de doação de insumos
+  itens?: string | null;
 }
 
 // campos opcionais na criação
 interface RequestCreationAttributes extends Optional<
   RequestAttributes, 
-  'id' | 'status' | 'notas' | 'email' | 'animal_nome' | 'animal_foto' | 'animal_id' | 'disponibilidade' | 'interesse'
+  'id' | 'status' | 'notas' | 'email' | 'animal_nome' | 'animal_foto' | 'animal_id' | 'disponibilidade' | 'interesse' | 'itens'
 > {}
 
 
@@ -54,6 +58,9 @@ class RequestModel
   // específicos de Voluntariado
   public disponibilidade!: string | null;
   public interesse!: string | null;
+
+  // específicos de Doação de Insumos
+  public itens!: string | null;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -93,7 +100,7 @@ RequestModel.init(
       defaultValue: '',
     },
     tipo: {
-      type: DataTypes.ENUM('adocao', 'voluntario'),
+      type: DataTypes.ENUM('adocao', 'voluntario', 'insumo'),
       allowNull: false,
     },
     // específicos de Adoção
@@ -116,6 +123,11 @@ RequestModel.init(
     },
     interesse: {
       type: DataTypes.STRING,
+      allowNull: true,
+    },
+    // específicos de Doação de Insumos
+    itens: {
+      type: DataTypes.TEXT,
       allowNull: true,
     },
   },

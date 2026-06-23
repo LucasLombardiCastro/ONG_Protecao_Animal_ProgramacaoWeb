@@ -11,6 +11,8 @@ import AnimalFormModal from '../../components/AnimalFormModal';
 import { Plus, Edit, Loader2 } from 'lucide-react';
 import { ANIMAL_STATUS, ANIMAL_SPECIE } from '../../constants/app';
 import { logger } from '../../utils/logger';
+import { sessionStorage } from '../../utils/api';
+
 
 export default function AdocaoPage() {
   const [animais, setAnimais] = useState<Animal[]>([]);
@@ -21,6 +23,11 @@ export default function AdocaoPage() {
   const [animalSelecionado, setAnimalSelecionado] = useState<Animal | null>(null);
   const [mostrarNovoAnimal, setMostrarNovoAnimal] = useState(false);
   const [animalEmEdicao, setAnimalEmEdicao] = useState<Animal | null>(null);
+
+  const [logado, setLogado] = useState(false);
+  useEffect(() => {
+    setLogado(sessionStorage.exists());
+  }, []);
 
   // const disponiveis = animaisMock.filter(
   //   a => a.status === ANIMAL_STATUS.WAITING && (filtro === 'Todos' || a.especie === filtro)
@@ -73,12 +80,14 @@ export default function AdocaoPage() {
           ))}
         </div>
 
-        <button 
-          onClick={() => setMostrarNovoAnimal(true)}
-          className="flex items-center gap-2 px-6 py-3 bg-stone-800 text-white font-bold rounded-2xl hover:bg-stone-700 hover:-translate-y-1 transition-all shadow-lg"
-        >
-          <Plus size={20} /> Adicionar Animal
-        </button>
+        {logado && (
+          <button
+            onClick={() => setMostrarNovoAnimal(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-stone-800 text-white font-bold rounded-2xl hover:bg-stone-700 hover:-translate-y-1 transition-all shadow-lg"
+          >
+            <Plus size={20} /> Adicionar Animal
+          </button>
+        )}
       </div>
 
       {erro && (
@@ -99,7 +108,7 @@ export default function AdocaoPage() {
                 key={a.id}
                 animal={a}
                 onClick={setAnimalSelecionado}
-                onEdit={setAnimalEmEdicao}
+                onEdit={logado ? setAnimalEmEdicao : undefined}
               />
             ))}
           </div>
@@ -125,16 +134,18 @@ export default function AdocaoPage() {
                         Novo Lar
                       </span>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setAnimalEmEdicao(a);
-                      }}
-                      className="absolute top-2 right-2 p-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-all shadow-md opacity-0 group-hover:opacity-100"
-                      title="Editar animal"
-                    >
-                      <Edit size={16} />
-                    </button>
+                    {logado && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setAnimalEmEdicao(a);
+                        }}
+                        className="absolute top-2 right-2 p-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-all shadow-md opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                        title="Editar animal"
+                      >
+                        <Edit size={16} />
+                      </button>
+                    )}
                   </div>
                   <p className="font-bold text-stone-700 text-center text-lg">{a.nome}</p>
                 </div>

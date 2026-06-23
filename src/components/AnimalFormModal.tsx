@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Animal } from '../types/domain';
-import { X, Upload } from 'lucide-react';
+import { X, Upload, AlertCircle, Loader2 } from 'lucide-react';
 import { ANIMAL_SPECIE, ANIMAL_SIZE, ANIMAL_STATUS } from '../constants/app';
 import { animalService, AnimalPayload } from '../services/animalService';
 import { logger } from '../utils/logger';
+import { uploadImagem } from '../services/uploadService';
 
 interface AnimalFormModalProps {
   animal?: Animal | null;
@@ -28,6 +29,10 @@ export default function AnimalFormModal({ animal = null, onClose, onSaved }: Ani
 
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [enviandoFoto, setEnviandoFoto] = useState(false);
+  const [erroFoto, setErroFoto] = useState('');
 
   const handleSalvar = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -73,6 +78,22 @@ export default function AnimalFormModal({ animal = null, onClose, onSaved }: Ani
     }
   };
 
+  const handleSelecionarArquivo = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const arquivo = e.target.files?.[0];
+    if (!arquivo) return;
+
+    setErroFoto('');
+    setEnviandoFoto(true);
+    try {
+      const url = await uploadImagem(arquivo);
+      setFoto(url);
+    } catch (error) {
+      setErroFoto(error instanceof Error ? error.message : 'Erro ao enviar a foto.');
+    } finally {
+      setEnviandoFoto(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
       <div className="bg-white relative shadow-2xl w-full max-w-4xl rounded-[2.5rem] max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95">
@@ -88,21 +109,39 @@ export default function AnimalFormModal({ animal = null, onClose, onSaved }: Ani
         <div className="flex flex-col md:flex-row h-full overflow-y-auto">
           {/* Photo Section */}
           <div className="md:w-5/12 h-72 md:h-auto flex-shrink-0 bg-stone-100 flex flex-col items-center justify-center gap-4 p-8">
-            {foto ? (
-              <img src={foto} alt="Pré-visualização" className="w-full h-48 object-cover rounded-2xl shadow-md" />
-            ) : (
-              <div className="w-full h-48 border-2 border-dashed border-stone-300 rounded-2xl flex flex-col items-center justify-center text-stone-400 gap-2">
-                <Upload size={32} />
-                <span className="text-sm font-medium">Sem foto</span>
-              </div>
-            )}
-            <input 
-              type="text"
-              value={foto}
-              onChange={(e) => setFoto(e.target.value)}
-              className="w-full bg-white border border-stone-200 rounded-xl py-3 px-4 text-stone-800 placeholder-stone-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all text-sm" 
-              placeholder="URL da foto" 
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              onChange={handleSelecionarArquivo}
+              className="hidden"
             />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={enviandoFoto}
+              className="relative w-full h-48 rounded-2xl overflow-hidden group"
+            >
+              {foto ? (
+                <img src={foto} alt="Pré-visualização" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full border-2 border-dashed border-stone-300 rounded-2xl flex flex-col items-center justify-center text-stone-400 gap-2 bg-white">
+                  <Upload size={32} />
+                  <span className="text-sm font-medium">Clique para escolher uma foto</span>
+                </div>
+              )}
+              <div className="absolute inset-0 bg-stone-900/0 group-hover:bg-stone-900/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                <span className="text-white font-bold text-sm flex items-center gap-2">
+                  <Upload size={18} /> Trocar foto
+                </span>
+              </div>
+              {enviandoFoto && (
+                <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
+                  <Loader2 className="animate-spin text-orange-500" size={28} />
+                </div>
+              )}
+            </button>
+            {erroFoto && <p className="text-red-600 text-xs font-medium text-center">{erroFoto}</p>}
           </div>
 
           {/* Form Section */}
@@ -196,6 +235,7 @@ export default function AnimalFormModal({ animal = null, onClose, onSaved }: Ani
               <button 
                 type="submit" 
                 className="w-full bg-orange-500 text-white font-bold py-4 rounded-xl hover:bg-orange-600 transition-all text-lg"
+                disabled={salvando || enviandoFoto}
               >
                 {isEditing ? 'Atualizar Animal' : 'Cadastrar Animal'}
               </button>

@@ -1,5 +1,5 @@
 import api from '../lib/axios';
-import { AdoptionRequest, Request, RequestStatus, VolunteerRequest } from '../types/domain';
+import { AdoptionRequest, Request, RequestStatus, VolunteerRequest, SupplyDonationRequest } from '../types/domain';
 
 export interface NovaSolicitacaoAdocao {
   nome: string; telefone: string; email?: string;
@@ -8,6 +8,13 @@ export interface NovaSolicitacaoAdocao {
 export interface NovaSolicitacaoVoluntario {
   nome: string; telefone: string; email?: string;
   disponibilidade: string; interesse: string;
+}
+
+export interface NovaSolicitacaoInsumo {
+  nome: string;
+  telefone: string;
+  email?: string;
+  itens: string;
 }
 
 export const requestService = {
@@ -21,6 +28,14 @@ export const requestService = {
   },
   async createVolunteer(payload: NovaSolicitacaoVoluntario, data: string): Promise<VolunteerRequest> {
     const { data: criada } = await api.post<VolunteerRequest>('/requests', { tipo: 'voluntario', data, ...payload });
+    return criada;
+  },
+  async createSupplyDonation(payload: NovaSolicitacaoInsumo, data: string): Promise<SupplyDonationRequest> {
+    const { data: criada } = await api.post<SupplyDonationRequest>('/requests', {
+      tipo: 'insumo',
+      data,
+      ...payload,
+    });
     return criada;
   },
   async updateStatus(id: number, status: RequestStatus): Promise<void> {

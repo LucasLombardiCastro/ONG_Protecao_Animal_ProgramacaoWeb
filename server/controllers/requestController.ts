@@ -41,6 +41,19 @@ export const requestController = {
         });
         res.status(201).json(novoPedidoVoluntario);
         return;
+      } else if (tipo === 'insumo') {
+        const { itens } = req.body;
+        if (!itens) {
+          res.status(400).json({ mensagem: 'A descrição dos itens é obrigatória para doação de insumos.' });
+          return;
+        }
+
+        const novoPedidoInsumo = await RequestModel.create({
+          tipo, nome, telefone, email, data, notas: notas || '',
+          itens
+        });
+        res.status(201).json(novoPedidoInsumo);
+        return;
       }
 
       res.status(400).json({ mensagem: 'Tipo de pedido inválido.' });

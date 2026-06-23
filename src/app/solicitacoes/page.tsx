@@ -1,13 +1,21 @@
 'use client';
 
-import { useState } from 'react';
-import { Search, X, Phone, Mail, PawPrint, HandHeart, Clock, MessageCircleQuestion, CheckCircle2 } from 'lucide-react';
-import { solicitacoesMock, RequestType } from '../../data/mockData';
-import { Request, RequestStatus, AdoptionRequest, VolunteerRequest } from '../../types/domain';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Search, X, Phone, Mail, PawPrint, HandHeart, Clock, MessageCircleQuestion, CheckCircle2, Loader2, Package } from 'lucide-react';
+import { Request, RequestStatus, RequestType, AdoptionRequest, VolunteerRequest, SupplyDonationRequest } from '../../types/domain';
 import { REQUEST_STATUS, REQUEST_TYPE } from '../../constants/app';
+import { requestService } from '../../services/requestService';
+import { sessionStorage } from '../../utils/api';
 import { logger } from '../../utils/logger';
 
-const statusConfig: Record<RequestStatus, { color: string; bg: string; icon: React.ReactNode }> = {
+const TIPO_INFO: Record<RequestType, { label: string; icon: typeof PawPrint; badge: string }> = {
+  [REQUEST_TYPE.ADOPTION]: { label: 'Adoção', icon: PawPrint, badge: 'bg-orange-100 text-orange-600' },
+  [REQUEST_TYPE.VOLUNTEER]: { label: 'Voluntariado', icon: HandHeart, badge: 'bg-green-100 text-green-700' },
+  [REQUEST_TYPE.SUPPLY]: { label: 'Doação de Insumos', icon: Package, badge: 'bg-blue-100 text-blue-700' },
+};
+
+const statusConfig: Record<RequestStatus, { color: string; bg: string; icon: React.ElementType }> = {
   [REQUEST_STATUS.NOT_CONTACTED]: { color: 'text-stone-500', bg: 'bg-stone-100', icon: Clock },
   [REQUEST_STATUS.AWAITING_RESPONSE]: { color: 'text-orange-600', bg: 'bg-orange-100', icon: MessageCircleQuestion },
   [REQUEST_STATUS.ANSWERED]: { color: 'text-green-700', bg: 'bg-green-100', icon: CheckCircle2 },
@@ -23,10 +31,32 @@ const formatPhoneToWhatsApp = (phone: string): string => {
 };
 
 export default function SolicitacoesPage() {
-  const [solicitacoes, setSolicitacoes] = useState<Request[]>(solicitacoesMock);
+  const router = useRouter();
+  
+  const [solicitacoes, setSolicitacoes] = useState<Request[]>([]);
   const [abaAtiva, setAbaAtiva] = useState<RequestType | 'todos'>('todos');
   const [busca, setBusca] = useState('');
   const [selecionada, setSelecionada] = useState<Request | null>(null);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState('');
+
+  // Se não tiver sessão ativa, redireciona para login
+  useEffect(() => {
+    if (!sessionStorage.exists()) {
+      router.push('/authentication/login');
+      return;
+    }
+
+    requestService
+      .listAll()
+      .then(setSolicitacoes)
+      .catch((error: unknown) => {
+        const mensagem = error instanceof Error ? error.message : 'Erro ao carregar solicitações.';
+        logger.error('Falha ao listar solicitações', mensagem);
+        setErro(mensagem);
+      })
+      .finally(() => setCarregando(false));
+  }, [router]);
 
   const filtradas = solicitacoes.filter(s => {
     const matchTipo = abaAtiva === 'todos' || s.tipo === abaAtiva;
@@ -34,22 +64,37 @@ export default function SolicitacoesPage() {
     return matchTipo && matchBusca;
   });
 
-  const handleStatusChange = (id: number, novoStatus: RequestStatus) => {
-    logger.info('Status alterado', { id, novoStatus });
-    setSolicitacoes(prev => prev.map(s => s.id === id ? { ...s, status: novoStatus } : s));
-    setSelecionada(prev => prev && prev.id === id ? { ...prev, status: novoStatus } : prev);
+  const handleStatusChange = async (id: number, novoStatus: RequestStatus) => {
+    try {
+      await requestService.updateStatus(id, novoStatus);
+      logger.info('Status alterado', { id, novoStatus });
+      setSolicitacoes(prev => prev.map(s => s.id === id ? { ...s, status: novoStatus } : s));
+      setSelecionada(prev => prev && prev.id === id ? { ...prev, status: novoStatus } : prev);
+    } catch (error) {
+      const mensagem = error instanceof Error ? error.message : 'Erro ao atualizar status.';
+      logger.error('Falha ao atualizar status', mensagem);
+      alert(mensagem);
+    }
   };
 
-  const handleNotasChange = (id: number, novasNotas: string) => {
-    logger.info('Notas atualizadas', { id });
-    setSolicitacoes(prev => prev.map(s => s.id === id ? { ...s, notas: novasNotas } : s));
-    setSelecionada(prev => prev && prev.id === id ? { ...prev, notas: novasNotas } : prev);
+  const handleNotasChange = async (id: number, novasNotas: string) => {
+    try {
+      await requestService.updateNotes(id, novasNotas);
+      logger.info('Notas atualizadas', { id });
+      setSolicitacoes(prev => prev.map(s => s.id === id ? { ...s, notas: novasNotas } : s));
+      setSelecionada(prev => prev && prev.id === id ? { ...prev, notas: novasNotas } : prev);
+    } catch (error) {
+      const mensagem = error instanceof Error ? error.message : 'Erro ao salvar notas.';
+      logger.error('Falha ao atualizar notas', mensagem);
+      alert(mensagem);
+    }
   };
 
   const counts = {
     todos: solicitacoes.length,
     [REQUEST_TYPE.ADOPTION]: solicitacoes.filter(s => s.tipo === REQUEST_TYPE.ADOPTION).length,
     [REQUEST_TYPE.VOLUNTEER]: solicitacoes.filter(s => s.tipo === REQUEST_TYPE.VOLUNTEER).length,
+    [REQUEST_TYPE.SUPPLY]: solicitacoes.filter(s => s.tipo === REQUEST_TYPE.SUPPLY).length,
   };
 
   return (
@@ -69,10 +114,10 @@ export default function SolicitacoesPage() {
 
       {/* Filters and Search */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
-        <div className="flex gap-3">
+        <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
           <button
             onClick={() => setAbaAtiva('todos')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-full font-bold transition-all ${
+            className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-full font-bold transition-all w-full md:w-auto ${
               abaAtiva === 'todos' 
                 ? 'bg-stone-800 text-white shadow-md' 
                 : 'bg-stone-100 text-stone-500 hover:bg-stone-200'
@@ -83,7 +128,7 @@ export default function SolicitacoesPage() {
           </button>
           <button
             onClick={() => setAbaAtiva(REQUEST_TYPE.ADOPTION)}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-full font-bold transition-all ${
+            className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-full font-bold transition-all w-full md:w-auto ${
               abaAtiva === REQUEST_TYPE.ADOPTION
                 ? 'bg-orange-500 text-white shadow-md' 
                 : 'bg-orange-50 text-orange-400 hover:bg-orange-100'
@@ -94,7 +139,7 @@ export default function SolicitacoesPage() {
           </button>
           <button
             onClick={() => setAbaAtiva(REQUEST_TYPE.VOLUNTEER)}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-full font-bold transition-all ${
+            className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-full font-bold transition-all w-full md:w-auto ${
               abaAtiva === REQUEST_TYPE.VOLUNTEER
                 ? 'bg-green-500 text-white shadow-md' 
                 : 'bg-green-50 text-green-600 hover:bg-green-100'
@@ -102,6 +147,15 @@ export default function SolicitacoesPage() {
           >
             <HandHeart size={16} /> Voluntariado
             <span className="bg-white/30 text-xs px-2 py-0.5 rounded-full">{counts[REQUEST_TYPE.VOLUNTEER]}</span>
+          </button>
+          <button
+            onClick={() => setAbaAtiva(REQUEST_TYPE.SUPPLY)}
+            className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-full font-bold transition-all w-full md:w-auto ${
+              abaAtiva === REQUEST_TYPE.SUPPLY ? 'bg-blue-500 text-white shadow-md' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+            }`}
+          >
+            <Package size={16} /> Insumos
+            <span className="bg-white/30 text-xs px-2 py-0.5 rounded-full">{counts[REQUEST_TYPE.SUPPLY]}</span>
           </button>
         </div>
 
@@ -118,7 +172,11 @@ export default function SolicitacoesPage() {
       </div>
 
       {/* Request List */}
-      {filtradas.length === 0 ? (
+      {carregando ? (
+        <div className="flex justify-center py-20 text-stone-400">
+          <Loader2 className="animate-spin" size={32} />
+        </div>
+      ) : filtradas.length === 0 ? (
         <div className="text-center py-20 text-stone-400 font-medium">
           Nenhuma solicitação encontrada.
         </div>
@@ -136,6 +194,7 @@ export default function SolicitacoesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {ativas.map(s => {
                     const StatusIcon = statusConfig[s.status].icon;
+                    const TipoIcon = TIPO_INFO[s.tipo].icon; // <- nova linha
                     return (
                       <div
                         key={s.id}
@@ -143,9 +202,9 @@ export default function SolicitacoesPage() {
                         className="rounded-3xl p-6 shadow-sm border bg-white border-orange-50 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer flex flex-col gap-4"
                       >
                         <div className="flex justify-between items-start">
-                          <div className={`flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-full ${s.tipo === 'adocao' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-700'}`}>
-                            {s.tipo === 'adocao' ? <PawPrint size={12} /> : <HandHeart size={12} />}
-                            {s.tipo === 'adocao' ? 'Adoção' : 'Voluntariado'}
+                          <div className={`flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-full ${TIPO_INFO[s.tipo].badge}`}>
+                            <TipoIcon size={12} />
+                            {TIPO_INFO[s.tipo].label}
                           </div>
                           <span className="text-xs text-stone-400 font-medium">{s.data}</span>
                         </div>
@@ -158,10 +217,15 @@ export default function SolicitacoesPage() {
                               <p className="text-stone-400 text-sm font-medium">Interesse em <span className="text-orange-500 font-bold">{s.animal_nome}</span></p>
                             </div>
                           </div>
-                        ) : (
+                        ) : s.tipo === 'voluntario' ? (
                           <div>
                             <p className="font-bold text-stone-800 text-lg leading-tight">{s.nome}</p>
                             <p className="text-stone-400 text-sm font-medium line-clamp-1">{s.interesse}</p>
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="font-bold text-stone-800 text-lg leading-tight">{s.nome}</p>
+                            <p className="text-stone-400 text-sm font-medium line-clamp-1">{s.itens}</p>
                           </div>
                         )}
 
@@ -189,6 +253,7 @@ export default function SolicitacoesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {finalizadas.map(s => {
                     const StatusIcon = statusConfig[s.status].icon;
+                    const TipoIcon = TIPO_INFO[s.tipo].icon; // <- nova linha
                     return (
                       <div
                         key={s.id}
@@ -196,9 +261,9 @@ export default function SolicitacoesPage() {
                         className="rounded-3xl p-6 shadow-sm border bg-stone-100 border-stone-200 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer flex flex-col gap-4 opacity-75"
                       >
                         <div className="flex justify-between items-start">
-                          <div className={`flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-full ${s.tipo === 'adocao' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-700'}`}>
-                            {s.tipo === 'adocao' ? <PawPrint size={12} /> : <HandHeart size={12} />}
-                            {s.tipo === 'adocao' ? 'Adoção' : 'Voluntariado'}
+                          <div className={`flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-full ${TIPO_INFO[s.tipo].badge}`}>
+                            <TipoIcon size={12} />
+                            {TIPO_INFO[s.tipo].label}
                           </div>
                           <span className="text-xs text-stone-400 font-medium">{s.data}</span>
                         </div>
@@ -211,10 +276,15 @@ export default function SolicitacoesPage() {
                               <p className="text-stone-400 text-sm font-medium">Interesse em <span className="text-orange-500 font-bold">{s.animal_nome}</span></p>
                             </div>
                           </div>
-                        ) : (
+                        ) : s.tipo === 'voluntario' ? (
                           <div>
                             <p className="font-bold text-stone-800 text-lg leading-tight">{s.nome}</p>
                             <p className="text-stone-400 text-sm font-medium line-clamp-1">{s.interesse}</p>
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="font-bold text-stone-800 text-lg leading-tight">{s.nome}</p>
+                            <p className="text-stone-400 text-sm font-medium line-clamp-1">{s.itens}</p>
                           </div>
                         )}
 
@@ -260,17 +330,26 @@ function SolicitacaoModal({
   onNotasChange: (id: number, notas: string) => void;
 }) {
   const [notasLocal, setNotasLocal] = useState(solicitacao.notas);
+  const tipoInfo = TIPO_INFO[solicitacao.tipo];
+  const TipoIcon = tipoInfo.icon;
   const statuses: RequestStatus[] = [REQUEST_STATUS.NOT_CONTACTED, REQUEST_STATUS.AWAITING_RESPONSE, REQUEST_STATUS.ANSWERED];
 
   const handleSalvarNotas = () => {
-    onNotasChange(solicitacao.id, notasLocal);
+    if (notasLocal !== solicitacao.notas) {
+      onNotasChange(solicitacao.id, notasLocal);
+    }
+  };
+
+  const handleFechar = () => {
+  handleSalvarNotas();
+  onClose();
   };
 
   return (
     <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
       <div className="bg-white relative shadow-2xl w-full max-w-2xl rounded-[2.5rem] max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95">
 
-        <button onClick={onClose} className="absolute z-20 top-6 right-6 p-2 bg-white/50 backdrop-blur-md rounded-full text-stone-600 hover:text-stone-900 hover:bg-white transition-all shadow-sm">
+        <button onClick={handleFechar} className="absolute z-20 top-6 right-6 p-2 bg-white/50 backdrop-blur-md rounded-full text-stone-600 hover:text-stone-900 hover:bg-white transition-all shadow-sm">
           <X size={24} />
         </button>
 
@@ -281,13 +360,13 @@ function SolicitacaoModal({
               <img src={solicitacao.animal_foto} alt={solicitacao.animal_nome} className="w-20 h-20 rounded-2xl object-cover flex-shrink-0" />
             ) : (
               <div className="w-20 h-20 rounded-2xl bg-green-100 flex items-center justify-center flex-shrink-0">
-                <HandHeart size={32} className="text-green-600" />
+                <TipoIcon size={32} className="text-stone-500" />
               </div>
             )}
             <div>
               <div className={`inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-full mb-2 ${solicitacao.tipo === 'adocao' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-700'}`}>
-                {solicitacao.tipo === 'adocao' ? <PawPrint size={12} /> : <HandHeart size={12} />}
-                {solicitacao.tipo === 'adocao' ? 'Solicitação de Adoção' : 'Solicitação de Voluntariado'}
+                <TipoIcon size={12} />
+                Solicitação de {tipoInfo.label}
               </div>
               <h2 className="text-3xl font-bold text-stone-800">{solicitacao.nome}</h2>
               <p className="text-stone-400 text-sm font-medium mt-1">Recebido em {solicitacao.data}</p>
@@ -322,7 +401,7 @@ function SolicitacaoModal({
               <p className="text-stone-700 font-medium">
                 Demonstrou interesse em adotar <span className="font-bold text-orange-500">{(solicitacao as AdoptionRequest).animal_nome}</span>.
               </p>
-            ) : (
+            ) : solicitacao.tipo === REQUEST_TYPE.VOLUNTEER ? (
               <>
                 <div>
                   <p className="text-sm text-stone-400 font-bold mb-1">Disponibilidade</p>
@@ -333,6 +412,11 @@ function SolicitacaoModal({
                   <p className="text-stone-700 font-medium">{(solicitacao as VolunteerRequest).interesse}</p>
                 </div>
               </>
+            ) : (
+              <div>
+                <p className="text-sm text-stone-400 font-bold mb-1">Itens oferecidos</p>
+                <p className="text-stone-700 font-medium">{(solicitacao as SupplyDonationRequest).itens}</p>
+              </div>
             )}
           </div>
 
