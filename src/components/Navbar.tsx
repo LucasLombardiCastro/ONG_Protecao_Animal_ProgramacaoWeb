@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { LogIn, LogOut, ClipboardList, Menu, X } from 'lucide-react';
 import { sessionStorage } from '../utils/api';
+import { authService } from '../services/authService';
 
 const LINKS = [
   { href: '/adocao', label: 'Adoção' },
@@ -24,10 +25,16 @@ export default function Navbar() {
   }, [pathname]);
 
   const handleLogout = () => {
-    sessionStorage.clear();
-    setLogado(false);
-    setMenuAberto(false);
-    router.push('/');
+    try {
+      authService.logout();
+    } catch {
+      // ignora o erro, se falhar desloga localmente
+    } finally {
+      sessionStorage.clear();
+      setLogado(false);
+      setMenuAberto(false);
+      router.push('/');
+    }
   };
 
   return (

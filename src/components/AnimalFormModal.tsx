@@ -12,11 +12,14 @@ interface AnimalFormModalProps {
   animal?: Animal | null;
   onClose: () => void;
   onSaved?: () => void;
+  onUpdated?: (animal: Animal) => void;
+  onDeleted?: (id: string) => void;
 }
 
-export default function AnimalFormModal({ animal = null, onClose, onSaved }: AnimalFormModalProps) {
+export default function AnimalFormModal({ animal = null, onClose, onSaved, onUpdated, onDeleted }: AnimalFormModalProps) {
   const isEditing = !!animal;
 
+  const id = animal?.id;
   const [foto, setFoto] = useState(animal?.foto_url || '');
   const [nome, setNome] = useState(animal?.nome || '');
   const [especie, setEspecie] = useState(animal?.especie || ANIMAL_SPECIE.DOG);
@@ -26,6 +29,8 @@ export default function AnimalFormModal({ animal = null, onClose, onSaved }: Ani
   const [historia, setHistoria] = useState(animal?.historia || '');
   const [vacinas, setVacinas] = useState(animal?.vacinas.join(', ') || '');
   const [status, setStatus] = useState(animal?.status || ANIMAL_STATUS.WAITING);
+  const [adotante, setAdotante] = useState(animal?.nome_adotante || '');
+  const [contato, setContato] = useState(animal?.contato_adotante || '');
 
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
@@ -50,27 +55,50 @@ export default function AnimalFormModal({ animal = null, onClose, onSaved }: Ani
       foto_url: foto,
       vacinas: vacinas.split(',').map((v) => v.trim()).filter(Boolean),
       status: status as typeof ANIMAL_STATUS[keyof typeof ANIMAL_STATUS],
-      ...(animal?.nome_adotante && { nome_adotante: animal.nome_adotante }),
-      ...(animal?.contato_adotante && { contato_adotante: animal.contato_adotante }),
+      nome_adotante: adotante,
+      contato_adotante: contato,
       ...(animal?.doc_adocao_url && { doc_adocao_url: animal.doc_adocao_url }),
     };
-
 
     try {
       if (isEditing && animal) {
         logger.info('Editando animal:', { id: animal.id, ...payload });
-        await animalService.update(animal.id, payload);
+        const animalAtualizado = await animalService.update(animal.id, payload);
+        onUpdated?.(animalAtualizado);
       } else {
         logger.info('Criando novo animal:', payload);
         await animalService.create(payload);
+        onSaved?.();
       }
 
-      onSaved?.();
       onClose();
 
     } catch (error) {
       const mensagem = error instanceof Error ? error.message : 'Erro ao salvar animal.';
       logger.error('Falha ao salvar animal', mensagem);
+      setErro(mensagem);
+
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const handleExcluir = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    
+    setErro('');
+    setSalvando(true);
+
+    try {
+      if (id) {
+        await animalService.remove(id);
+        onDeleted?.(id);
+      }
+      onClose();
+
+    } catch (error) {
+      const mensagem = error instanceof Error ? error.message : 'Erro ao excluir animal.';
+      logger.error('Falha ao excluir animal', mensagem);
       setErro(mensagem);
 
     } finally {
@@ -108,7 +136,7 @@ export default function AnimalFormModal({ animal = null, onClose, onSaved }: Ani
 
         <div className="flex flex-col md:flex-row h-full overflow-y-auto">
           {/* Photo Section */}
-          <div className="md:w-5/12 h-72 md:h-auto flex-shrink-0 bg-stone-100 flex flex-col items-center justify-center gap-4 p-8">
+          <div className="md:w-5/12 h-6/12 md:h-auto flex-shrink-0 bg-stone-100 flex flex-col items-center justify-center gap-4 p-8">
             <input
               type="file"
               accept="image/*"
@@ -120,7 +148,7 @@ export default function AnimalFormModal({ animal = null, onClose, onSaved }: Ani
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={enviandoFoto}
-              className="relative w-full h-48 rounded-2xl overflow-hidden group"
+              className="relative w-full h-40 rounded-2xl overflow-hidden group"
             >
               {foto ? (
                 <img src={foto} alt="Pré-visualização" className="w-full h-full object-cover" />
@@ -142,6 +170,14 @@ export default function AnimalFormModal({ animal = null, onClose, onSaved }: Ani
               )}
             </button>
             {erroFoto && <p className="text-red-600 text-xs font-medium text-center">{erroFoto}</p>}
+            
+            <button
+              onClick={handleExcluir} 
+              className="w-full bg-red-200 text-red-600 font-bold py-4 rounded-xl hover:text-white hover:bg-red-600 transition-all "
+              disabled={salvando || enviandoFoto}
+            >
+              Excluir Animal
+            </button>
           </div>
 
           {/* Form Section */}
@@ -232,9 +268,30 @@ export default function AnimalFormModal({ animal = null, onClose, onSaved }: Ani
                 </select>
               )}
 
-              <button 
+              {status == ANIMAL_STATUS.ADOPTED && (
+                  <div className='space-y-4'>
+                    <input 
+                      type="text"
+                      value={adotante}
+                      onChange={(e) => setAdotante(e.target.value)}
+                      className="w-full bg-white border border-stone-200 rounded-xl py-3 px-4 text-stone-800 placeholder-stone-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all" 
+                      placeholder="Nome do adotante" 
+                      required 
+                    />
+                    <input 
+                      type="text"
+                      value={contato}
+                      onChange={(e) => setContato(e.target.value)}
+                      className="w-full bg-white border border-stone-200 rounded-xl py-3 px-4 text-stone-800 placeholder-stone-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all" 
+                      placeholder="Telefone do adotante" 
+                      required 
+                    />
+                  </div>
+              )}
+
+              <button
                 type="submit" 
-                className="w-full bg-orange-500 text-white font-bold py-4 rounded-xl hover:bg-orange-600 transition-all text-lg"
+                className="w-full mb-4 bg-orange-500 text-white font-bold py-4 rounded-xl hover:bg-orange-600 transition-all text-lg"
                 disabled={salvando || enviandoFoto}
               >
                 {isEditing ? 'Atualizar Animal' : 'Cadastrar Animal'}

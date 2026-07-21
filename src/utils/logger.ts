@@ -23,7 +23,7 @@ export const logger = {
   },
 
   error: (message: string, error?: unknown) => {
-    console.error(formatLog('error', message), error);
+    console.warn(formatLog('error', message), error);
     // TODO: Send to monitoring service (Sentry, LogRocket, etc)
   },
 

@@ -75,7 +75,7 @@ export default function LoginPage() {
         {/* Header */}
         <div className="text-center mb-10">
           <div className="inline-block bg-orange-100 text-orange-600 font-bold px-4 py-2 rounded-full text-sm mb-6">
-            🔐 Área de Funcionários
+            Área de Funcionários
           </div>
           <h1 className="text-4xl font-bold text-stone-800 mb-3">Bem-vindo!</h1>
           <p className="text-stone-600 font-medium">

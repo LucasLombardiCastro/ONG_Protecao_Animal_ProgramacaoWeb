@@ -6,7 +6,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
         <div className="text-center md:text-left">
           <h3 className="text-xl font-bold text-orange-500 mb-2">Vida Animal 🐾</h3>
-          <p className="text-stone-500 text-sm">Cuidando de patinhas desde 2020.</p>
+          <p className="text-stone-500 text-sm">Cuidando de patinhas.</p>
         </div>
         
         <div className="flex gap-8 text-stone-600">

@@ -306,6 +306,11 @@ export default function SolicitacoesPage() {
         </div>
       )}
 
+      {/* Adicionar novos usuários */}
+      
+
+      
+
       {selecionada && (
         <SolicitacaoModal
           solicitacao={selecionada}

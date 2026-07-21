@@ -7,9 +7,9 @@ import { authController } from '../controllers/authController';
 const router = Router();
 
 // Rota de teste
-router.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({ status: 'API rodando perfeitamente!' });
-});
+// router.get('/health', (req: Request, res: Response) => {
+//   res.status(200).json({ status: 'API rodando perfeitamente!' });
+// });
 
 
 router.get('/animais', animalController.listar);
@@ -26,6 +26,8 @@ router.delete('/requests/:id', authController.validar, requestController.deletar
 
 router.post('/auth/register', authController.registrar);
 router.post('/auth/login', authController.login);
+router.get('/auth/logout', authController.logout);
+router.get('/auth/refresh', authController.refresh);
 
 
 export default router;

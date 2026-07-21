@@ -7,6 +7,8 @@ import { ANIMAL_STATUS, UI_CONFIG } from '../constants/app';
 import { requestService } from '../services/requestService';
 import { logger } from '../utils/logger';
 import { dataAtual } from '../utils/date';
+import { useEffect } from 'react';
+import { sessionStorage } from '../utils/api';
 
 interface AdoptionModalProps {
   animal: Animal | null;
@@ -20,8 +22,16 @@ export default function AdoptionModal({ animal, onClose }: AdoptionModalProps) {
   const [telefone, setTelefone] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
+  const [logado, setLogado] = useState(false);
 
   if (!animal) return null;
+  useEffect(() => {
+    setLogado(sessionStorage.exists());
+  }, []);
+
+  useEffect(() => {
+    
+  })
 
   const isAdotado = animal.status === ANIMAL_STATUS.ADOPTED;
 
@@ -97,7 +107,7 @@ export default function AdoptionModal({ animal, onClose }: AdoptionModalProps) {
               </p>
             </div>
 
-            {isAdotado ? (
+            {(isAdotado && logado)  ? (
               /* Staff Only Section */
               <div className="mt-auto pt-6">
                 <div className="p-6 bg-white border-2 border-orange-200 border-dashed rounded-3xl shadow-sm">
@@ -139,46 +149,50 @@ export default function AdoptionModal({ animal, onClose }: AdoptionModalProps) {
                   </p>
                 </div>
 
-                {!mostrarForm ? (
-                  <button 
-                    onClick={() => setMostrarForm(true)}
-                    className="w-full border-2 border-orange-500 text-orange-500 font-bold py-4 rounded-full hover:bg-orange-500 hover:text-white transition-all text-lg"
-                  >
-                    Gostei! Quero conhecer mais!
-                  </button>
-                ) : enviado ? (
-                  <div className="bg-green-50 text-green-700 p-6 rounded-3xl text-center font-medium animate-in fade-in border border-green-100">
-                    Que incrível! Seus dados foram enviados. Um voluntário vai te chamar no WhatsApp em breve.
-                  </div>
-                ) : (
-                  <form className="space-y-6 animate-in fade-in bg-white p-6 rounded-3xl shadow-sm border border-stone-100" onSubmit={handleEnviar}>
-                    <p className="font-bold text-stone-800 text-lg">Me passa seu contato?</p>
-                    <div className="space-y-4">
-                      <input 
-                        type="text"
-                        value={nome}
-                        onChange={(e) => setNome(e.target.value)}
-                        className="w-full bg-stone-50 border border-stone-200 rounded-xl py-3 px-4 text-stone-800 placeholder-stone-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all" 
-                        placeholder="Como você se chama?" 
-                        required 
-                      />
-                      <input 
-                        type="tel"
-                        value={telefone}
-                        onChange={(e) => setTelefone(e.target.value)}
-                        className="w-full bg-stone-50 border border-stone-200 rounded-xl py-3 px-4 text-stone-800 placeholder-stone-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all" 
-                        placeholder="Seu melhor WhatsApp" 
-                        required 
-                      />
-                    </div>
+
+                {!isAdotado && (
+                  !mostrarForm ? (
                     <button 
-                      type="submit" 
-                      className="w-full bg-stone-800 text-white font-bold py-4 rounded-xl hover:bg-stone-900 transition-all"
+                      onClick={() => setMostrarForm(true)}
+                      className="w-full border-2 border-orange-500 text-orange-500 font-bold py-4 rounded-full hover:bg-orange-500 hover:text-white transition-all text-lg"
                     >
-                      Enviar contato
+                      Gostei! Quero conhecer mais!
                     </button>
-                  </form>
+                  ) : enviado ? (
+                    <div className="bg-green-50 text-green-700 p-6 rounded-3xl text-center font-medium animate-in fade-in border border-green-100">
+                      Que incrível! Seus dados foram enviados. Um voluntário vai te chamar no WhatsApp em breve.
+                    </div>
+                  ) : (
+                    <form className="space-y-6 animate-in fade-in bg-white p-6 rounded-3xl shadow-sm border border-stone-100" onSubmit={handleEnviar}>
+                      <p className="font-bold text-stone-800 text-lg">Me passa seu contato?</p>
+                      <div className="space-y-4">
+                        <input 
+                          type="text"
+                          value={nome}
+                          onChange={(e) => setNome(e.target.value)}
+                          className="w-full bg-stone-50 border border-stone-200 rounded-xl py-3 px-4 text-stone-800 placeholder-stone-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all" 
+                          placeholder="Como você se chama?" 
+                          required 
+                        />
+                        <input 
+                          type="tel"
+                          value={telefone}
+                          onChange={(e) => setTelefone(e.target.value)}
+                          className="w-full bg-stone-50 border border-stone-200 rounded-xl py-3 px-4 text-stone-800 placeholder-stone-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all" 
+                          placeholder="Seu melhor WhatsApp" 
+                          required 
+                        />
+                      </div>
+                      <button 
+                        type="submit" 
+                        className="w-full bg-stone-800 text-white font-bold py-4 rounded-xl hover:bg-stone-900 transition-all"
+                      >
+                        Enviar contato
+                      </button>
+                    </form>
+                  )
                 )}
+                
               </div>
             )}
           </div>

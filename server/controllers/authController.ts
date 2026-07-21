@@ -3,14 +3,26 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
 
+// Estrutura do payload
+interface UserPayload {
+  id: number,
+  email: string,
+}
+
 // função auxiliar para gerar token
-const gerarToken = (params = {}) => {
+const gerarAuthToken = (params = {}) => {
   const secret = process.env.JWT_SECRET || 'chave_desenvolvimento';
   return jwt.sign(params, secret, {
-  expiresIn: '1d', 
-});
+    expiresIn: '15m', 
+  });
 };
 
+const gerarRefreshToken = (params = {}) => {
+  const secret = process.env.JWT_SECRET || 'chave_desenvolvimento';
+  return jwt.sign(params, secret, {
+    expiresIn: '7d', 
+  });
+};
 
 export const authController = {
 
@@ -73,9 +85,18 @@ export const authController = {
         email: novoUsuario.email,
       };
 
+      // Refresh token
+      const refreshToken = gerarRefreshToken({ id: novoUsuario.id, email: novoUsuario.email });
+      res.cookie('refresh_token', refreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000
+      });
+
       res.status(201).json({
         usuario: usuarioResposta,
-        token: gerarToken({ id: novoUsuario.id, email: novoUsuario.email }),
+        token: gerarAuthToken({ id: novoUsuario.id, email: novoUsuario.email }),
       });
 
     } catch (error) {
@@ -115,14 +136,48 @@ export const authController = {
         email: usuario.email,
       };
 
+      // Refresh token
+      const refreshToken = gerarRefreshToken({ id: usuarioResposta.id, email: usuarioResposta.email });
+      res.cookie('refresh_token', refreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000
+      });
+
       res.status(200).json({
         usuario: usuarioResposta,
-        token: gerarToken({ id: usuario.id, email: usuario.email }),
+        token: gerarAuthToken({ id: usuario.id, email: usuario.email }),
       });
       
     } catch (error) {
       console.error('Erro ao efetuar login:', error);
       res.status(500).json({ mensagem: 'Erro interno ao processar login.' });
     }
-  },  
+  },
+
+  // 4. Faz o refresh
+  async refresh(req: Request, res: Response): Promise<void> {
+    const refreshToken = req.cookies.refresh_token;
+
+    if (!refreshToken) {
+      res.status(401).send('Falta refresh token');
+      return;
+    }
+
+    try {
+      const secret = process.env.JWT_SECRET || 'chave_desenvolvimento';
+      const decoded = jwt.verify(refreshToken, secret) as UserPayload;
+      const token = gerarAuthToken({ id: decoded.id, email: decoded.email });
+      res.status(200).send({ token });
+    } catch (e) {
+      res.status(401).send('Invalid refresh token');
+    }
+  },
+
+  // 5. logout
+  async logout(req: Request, res: Response): Promise<void> {
+    res.clearCookie('refresh_token');
+    res.sendStatus(204);
+  },
 }

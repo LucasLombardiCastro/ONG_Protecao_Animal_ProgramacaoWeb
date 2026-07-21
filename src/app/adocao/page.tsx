@@ -56,6 +56,14 @@ export default function AdocaoPage() {
     carregarAnimais();
   }, []);
 
+  const handleAnimalAtualizado = (animal: Animal) => {
+    setAnimais(animais.map(a => a.id === animal.id ? animal : a));
+  }
+
+  const handleAnimalDeletado = (id: string) => {
+    setAnimais(animais.filter(a => a.id !== id));
+  }
+
   const disponiveis = animais.filter(
     a => a.status === ANIMAL_STATUS.WAITING && (filtro === 'Todos' || a.especie === filtro)
   );
@@ -157,13 +165,17 @@ export default function AdocaoPage() {
 
       {animalSelecionado && <AdoptionModal animal={animalSelecionado} onClose={() => setAnimalSelecionado(null)} />}
       {mostrarNovoAnimal && (
-        <AnimalFormModal onClose={() => setMostrarNovoAnimal(false)} onSaved={carregarAnimais} />
+        <AnimalFormModal
+          onClose={() => setMostrarNovoAnimal(false)}
+          onSaved={carregarAnimais}
+        />
       )}
       {animalEmEdicao && (
         <AnimalFormModal
           animal={animalEmEdicao}
           onClose={() => setAnimalEmEdicao(null)}
-          onSaved={carregarAnimais}
+          onUpdated={handleAnimalAtualizado}
+          onDeleted={handleAnimalDeletado}
         />
       )}
     </main>
